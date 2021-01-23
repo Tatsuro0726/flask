@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Member List{% endblock %}
+{% block content %}
+<h1>メンバ一覧</h1>
+{% for user in member_list: %}
+    <ul>
+        <li>
+            <a href="{{ url_for('member_detail', member_number=user.number) }}">
+                {{ "%s(%s)" | format(user.name, user.age) }}
+            </a>
+        </li>
+    </ul>
+{% endfor %}
+{% endblock %}
