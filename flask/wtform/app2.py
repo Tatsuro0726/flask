@@ -1,5 +1,5 @@
 from flask import (
-    Flask, render_template, request, session, redirect, url_for
+    Flask, render_template, request, session, redirect, url_for, flash
 )
 from wtforms import Form
 from wtforms import (
@@ -7,21 +7,52 @@ from wtforms import (
     RadioField, SelectField, TextAreaField, SubmitField
 )
 from wtforms.widgets import TextArea
+from wtforms.validators import DataRequired, EqualTo, Length, NumberRange, ValidationError
+from datetime import date
+
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = b'\xc7\x06\xfb4sq\xa9\xa6\xa7\xc0\xcd\rX\xb5PL'
 
+def validate_name2(form, field):
+    if field.data == 'nanashi2':
+        raise ValidationError('その名前も利用できません。')
+
+
 class UserForm(Form):
-    name = StringField('名前:',widget=TextArea(), default='Flask太郎')
-    age = IntegerField('年齢:')
-    password = PasswordField('パスワード:')
+    name = StringField('名前:',validators=[validate_name2, DataRequired('必須項目です')], default='Flask太郎')
+    age = IntegerField('年齢:', validators=[NumberRange(0, 100, '正しくない値です')])
+    password = PasswordField(
+        'パスワード:', 
+        validators=[
+            Length(1,10,'長さは10文字以内です'),
+            EqualTo('confirm_password', 'パスワードが一致しいません')
+            ]
+    )
+    confirm_password = PasswordField('パスワード再入力:')
     birthday = DateField('誕生日:', format='%Y/%m/%d', render_kw={"placeholder": "yyyy/mm/dd"})
     gender = RadioField('性別:', choices=[('man', '男性'), ('woman', '女性')], default='man')
     major = SelectField('専攻', choices=[('bungaku', '文学部'), ('hougaku', '法学部'), ('rigaku', '理学部')])
     is_japanese = BooleanField('日本人？:')
     message = TextAreaField('メッセージ:')
     submit = SubmitField('送信')
+
+    def validate_name(form, field):
+        if field.data == 'nanashi':
+            raise ValidationError('その名前は利用できません。')
+    
+    def validate(self):
+        if not super(UserForm, self).validate():
+            return False
+        today = date.today()
+        birthday = self.birthday.data
+        birthday_of_this_age = birthday.replace(year=birthday.year + self.age.data)
+        if 0 <= (today - birthday_of_this_age).days <= 365:
+            return True
+        flash('年齢と正しくないです')
+        return False
+
 
 @app.route('/user_regist', methods=['GET', 'POST'])
 def index():

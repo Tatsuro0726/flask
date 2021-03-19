@@ -1,3 +1,5 @@
 flask
 pykakasi
 wtforms
+flask-sqlalchemy
+flask-migrate
